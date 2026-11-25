@@ -74,6 +74,25 @@ WITH all_files AS
     'Game'::synchronizer.ItemType ItemType,
     0 Layer 
   FROM file_hashes.loadout_files(db)
+  -- installations with a recorded baseline use it instead (see below)
+  WHERE Loadout NOT IN (
+    SELECT loadout.Id FROM MDB_LOADOUT(Db=>db) loadout
+    WHERE loadout.Installation IN (SELECT DISTINCT Game FROM MDB_GAMEBASELINEFILE(Db=>db))
+  )
+  UNION
+  -- Game files on Layer 0 from the baseline recorded when the game was first managed. A baseline only exists if
+  -- the game-hashes database didn't know the installed version (it is no longer updated by Nexus Mods).
+  -- Keep in sync with ALoadoutSynchronizer.GetOriginalGameFiles.
+  SELECT
+    loadout.Id Loadout,
+    NULL Id,
+    {Location: baseline.Path.Item2, Path: baseline.Path.Item3} Path,
+    baseline.Hash,
+    baseline.Size,
+    'Game'::synchronizer.ItemType ItemType,
+    0 Layer
+  FROM MDB_LOADOUT(Db=>db) loadout
+  INNER JOIN MDB_GAMEBASELINEFILE(Db=>db) baseline ON baseline.Game = loadout.Installation
   UNION
   -- Loadout files on Layer 1
   SELECT

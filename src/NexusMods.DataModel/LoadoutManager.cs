@@ -350,6 +350,12 @@ internal partial class LoadoutManager : ILoadoutManager
                 tx.Delete(entry, recursive: false);
             }
 
+            // Forget the recorded original game files, so managing the game again records a fresh baseline
+            foreach (var baselineFile in GameBaselineFile.FindByGame(metadata.Db, metadata))
+            {
+                tx.Delete(baselineFile, recursive: false);
+            }
+
             if (metadata.Contains(GameInstallMetadata.LastSyncedLoadoutId))
                 tx.Retract(metadata, GameInstallMetadata.LastSyncedLoadoutId, metadata.LastSyncedLoadoutId.Value);
             if (metadata.Contains(GameInstallMetadata.LastSyncedLoadoutTransactionId))
