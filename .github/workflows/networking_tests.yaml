@@ -1,8 +1,9 @@
 name: Networking Tests
 
+# Manual only: these tests need a self-hosted runner and a NEXUS_API_KEY secret, which this
+# fork doesn't have, so running them on every push just leaves runs stuck in the queue.
 on:
   workflow_dispatch:
-  push:
 
 jobs:
   build:
