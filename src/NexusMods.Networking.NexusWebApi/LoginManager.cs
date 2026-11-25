@@ -76,10 +76,16 @@ public sealed class LoginManager : IDisposable, ILoginManager
         _nexusApiClient = nexusApiClient;
         _logger = logger;
 
+        // Logged in when either an OAuth token or a personal API key is stored.
         _observeDatomDisposable = _conn
             .ObserveDatoms(JWTToken.PrimaryAttribute)
             .IsNotEmpty()
             .ToObservable()
+            .CombineLatest(
+                _conn.ObserveDatoms(ApiKey.Key).IsNotEmpty().ToObservable(),
+                static (hasToken, hasApiKey) => hasToken || hasApiKey
+            )
+            .Select(hasValue => hasValue || Environment.GetEnvironmentVariable(ApiKeyMessageFactory.NexusApiKeyEnvironmentVariable) is not null)
             .DistinctUntilChanged()
             .SubscribeAwait(async (hasValue, cancellationToken) =>
             {
@@ -283,7 +289,10 @@ public sealed class LoginManager : IDisposable, ILoginManager
     public async Task Logout()
     {
         _cachedUserInfo.Evict();
-        var tokenEntities = JWTToken.All(_conn.Db).Select(e => e.Id).ToArray();
+        // Logging out removes both the OAuth token and any stored personal API key.
+        var tokenEntities = JWTToken.All(_conn.Db).Select(e => e.Id)
+            .Concat(ApiKey.All(_conn.Db).Select(e => e.Id))
+            .ToArray();
 
         // Retract the entities first, so the UI updates, then excise them
         using var tx = _conn.BeginTransaction();

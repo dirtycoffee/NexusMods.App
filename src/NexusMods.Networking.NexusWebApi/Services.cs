@@ -25,19 +25,25 @@ public static class Services
     {
         collection.AddLoginVerbs();
 
-        apiKeyAuth ??= Environment.GetEnvironmentVariable(ApiKeyMessageFactory.NexusApiKeyEnvironmentVariable) != null;
+        // Both login methods are always available. NexusAuthMessageFactory uses a personal API key
+        // when one is set and falls back to OAuth otherwise. apiKeyAuth: true forces API keys only
+        // (used by tests).
+        collection
+            .AddSingleton<ApiKeyMessageFactory>()
+            .AddSingleton<OAuth2MessageFactory>();
 
-        if (apiKeyAuth!.Value)
+        if (apiKeyAuth is true)
         {
             collection
-                .AddAllSingleton<IHttpMessageFactory, ApiKeyMessageFactory>()
-                .AddSingleton<IAuthenticatingMessageFactory, ApiKeyMessageFactory>();
+                .AddSingleton<IHttpMessageFactory>(s => s.GetRequiredService<ApiKeyMessageFactory>())
+                .AddSingleton<IAuthenticatingMessageFactory>(s => s.GetRequiredService<ApiKeyMessageFactory>());
         }
         else
         {
             collection
-                .AddAllSingleton<IHttpMessageFactory, OAuth2MessageFactory>()
-                .AddSingleton<IAuthenticatingMessageFactory, OAuth2MessageFactory>();
+                .AddSingleton<NexusAuthMessageFactory>()
+                .AddSingleton<IHttpMessageFactory>(s => s.GetRequiredService<NexusAuthMessageFactory>())
+                .AddSingleton<IAuthenticatingMessageFactory>(s => s.GetRequiredService<NexusAuthMessageFactory>());
         }
         collection.AddSingleton<OAuth>();
         collection.AddSingleton<IIDGenerator, IDGenerator>();
@@ -87,6 +93,13 @@ public static class Services
 
                 httpClient.DefaultRequestHeaders.Add(BaseHttpMessageFactory.HeaderApplicationName, ApplicationConstants.UserAgent.ApplicationName);
                 httpClient.DefaultRequestHeaders.Add(BaseHttpMessageFactory.HeaderApplicationVersion, ApplicationConstants.UserAgent.ApplicationVersion);
+
+                var apiKey = serviceProvider.GetRequiredService<ApiKeyMessageFactory>().TryGetApiKey();
+                if (apiKey is not null)
+                {
+                    httpClient.DefaultRequestHeaders.Add("apikey", apiKey);
+                    return;
+                }
 
                 var authenticationHeaderValue = serviceProvider.GetRequiredService<IHttpMessageFactory>().GetAuthenticationHeaderValue();
                 if (authenticationHeaderValue is null) return;

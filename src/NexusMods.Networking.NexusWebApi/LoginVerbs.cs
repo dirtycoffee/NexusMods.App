@@ -28,7 +28,7 @@ internal static class LoginVerbs
 
     [Verb("nexus-api-key", "Sets the key used in Nexus API calls")]
     private static async Task<int> SetApiKey([Injected] ApiKeyMessageFactory apiKeyMessageFactory,
-    [Option("a", "apiey", "Api key to register")] string key)
+    [Option("a", "apikey", "Api key to register")] string key)
     {
         await apiKeyMessageFactory.SetApiKey(key);
         return 0;
