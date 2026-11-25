@@ -51,8 +51,32 @@ jobs:
       - name: Build
         run: dotnet build --no-restore -c Debug
 
-      - name: Test
-        run: >-
-          dotnet test --no-build -c Debug
-          --filter "RequiresNetworking!=True&FlakeyTest!=True"
-          --blame-hang-timeout 20m
+      # TUnit projects use Microsoft.Testing.Platform, which the .NET 10 SDK no longer runs through
+      # VSTest-style `dotnet test`. Run the xUnit projects via a copy of the solution without them,
+      # then run the TUnit projects with their own runner.
+      - name: Find TUnit projects
+        id: tunit
+        run: |
+          projects=$(grep -rl --include='*.csproj' 'Include="TUnit"' tests | sort | tr '\n' ' ')
+          echo "projects=$projects" >> "$GITHUB_OUTPUT"
+          echo "TUnit projects: $projects"
+
+      - name: Test (xUnit)
+        run: |
+          cp NexusMods.App.sln ci-xunit.sln
+          dotnet sln ci-xunit.sln remove ${{ steps.tunit.outputs.projects }}
+          dotnet test ci-xunit.sln --no-build -c Debug \
+            --filter "RequiresNetworking!=True&FlakeyTest!=True" \
+            --blame-hang-timeout 20m
+
+      - name: Test (TUnit)
+        run: |
+          status=0
+          for project in ${{ steps.tunit.outputs.projects }}; do
+            name=$(basename "$project" .csproj)
+            dll="$(dirname "$project")/bin/Debug/net10.0/$name.dll"
+            echo "::group::$name"
+            dotnet "$dll" --treenode-filter "/*/*/*/*[RequiresNetworking!=True]" || status=1
+            echo "::endgroup::"
+          done
+          exit $status
