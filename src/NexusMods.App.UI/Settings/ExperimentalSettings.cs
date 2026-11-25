@@ -19,10 +19,14 @@ public record ExperimentalSettings : ISettings
     // TODO: remove for GA
     public bool EnableCollectionSharing { get; [UsedImplicitly] set; }
 
+    /// <summary>
+    /// Games offered in "My Games" unless <see cref="EnableAllGames"/> is set.
+    /// This fork focuses on Cyberpunk 2077; the other games stay registered so existing
+    /// loadouts keep working, they just aren't offered for new setups.
+    /// </summary>
     [JsonIgnore]
     public readonly GameId[] SupportedGames =
     [
-        GameId.From("StardewValley"),
         GameId.From("RedEngine.Cyberpunk2077"),
     ];
 
