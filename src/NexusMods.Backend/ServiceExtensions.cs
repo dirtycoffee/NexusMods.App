@@ -86,7 +86,7 @@ public static class ServiceExtensions
 
         serviceCollection = os.MatchPlatform(
             ref serviceCollection,
-            onWindows: static (ref IServiceCollection value) => value.AddSingleton<IOSInterop, WindowsInterop>(),
+            onWindows: static (ref IServiceCollection _) => throw new PlatformNotSupportedException("This fork of the Nexus Mods app only supports Linux"),
             onLinux: static (ref IServiceCollection value) => value.AddSingleton<IOSInterop, LinuxInterop>(),
             onOSX: static (ref IServiceCollection value) => value.AddSingleton<IOSInterop, MacOSInterop>()
         );
