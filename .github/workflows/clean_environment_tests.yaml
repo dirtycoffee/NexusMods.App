@@ -28,10 +28,31 @@ jobs:
       - name: Fails because it's a draft PR
         run: exit 1
 
+  # Previously this called Nexus-Mods/NexusMods.App.Meta's shared workflow, which installs
+  # .NET 9 and also runs on macOS/Windows. This fork is Linux-only on .NET 10, so build and
+  # test here instead, using the SDK from global.json.
   build-and-test:
     if: github.event_name == 'push' || github.event.pull_request.draft == false
-    uses: Nexus-Mods/NexusMods.App.Meta/.github/workflows/dotnet-build-and-test-with-osx.yaml@main
-    with:
-      extra-test-args: "--blame-hang-timeout 20m"
-      test-filter: "RequiresNetworking!=True&FlakeyTest!=True"
-      codecov-flags: ",clean_environment_tests"
+    name: Build and Test (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Debug
+
+      - name: Test
+        run: >-
+          dotnet test --no-build -c Debug
+          --filter "RequiresNetworking!=True&FlakeyTest!=True"
+          --blame-hang-timeout 20m
