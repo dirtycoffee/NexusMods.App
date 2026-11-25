@@ -62,6 +62,7 @@
 
                 <StackPanel Orientation="Horizontal" Spacing="{StaticResource Spacing-4}" HorizontalAlignment="Center">
                     <controls:StandardButton x:Name="ButtonOpenDiscord"
+                                             IsVisible="False"
                                              Text="Discord"
                                              Type="Secondary"
                                              Fill="None"
@@ -71,6 +72,7 @@
                                              ToolTip.Tip="Open Discord" />
 
                     <controls:StandardButton x:Name="ButtonOpenForum"
+                                             IsVisible="False"
                                              Text="Nexus Mods Forums"
                                              Type="Secondary"
                                              Fill="None"
