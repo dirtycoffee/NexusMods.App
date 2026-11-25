@@ -3,9 +3,9 @@ This schema is written to a markdown file for both documentation and validation 
 models in the app, then validate the tests to update this file. 
 
 ## Statistics
-   - Fingerprint: 0x03E30ECD79A64605
-   - Total attributes: 232
-   - Total namespaces: 75
+   - Fingerprint: 0x797AD32AEC1F1552
+   - Total attributes: 236
+   - Total namespaces: 76
    
 ## Attributes
 | AttributeId                                                                        | Type                    | Indexed | Many  | NoHistory | 
@@ -90,6 +90,10 @@ models in the app, then validate the tests to update this file.
 | NexusMods.Loadouts.DiskStateEntry/LastModified                                     | Int64                   | False   | False | False     | 
 | NexusMods.Loadouts.DiskStateEntry/Path                                             | Tuple3_Ref_UShort_Utf8I | False   | False | False     | 
 | NexusMods.Loadouts.DiskStateEntry/Size                                             | UInt64                  | False   | False | False     | 
+| NexusMods.Loadouts.GameBaselineFile/Game                                           | Reference               | True    | False | False     | 
+| NexusMods.Loadouts.GameBaselineFile/Hash                                           | UInt64                  | False   | False | False     | 
+| NexusMods.Loadouts.GameBaselineFile/Path                                           | Tuple3_Ref_UShort_Utf8I | False   | False | False     | 
+| NexusMods.Loadouts.GameBaselineFile/Size                                           | UInt64                  | False   | False | False     | 
 | NexusMods.Loadouts.GameMetadata/GameId                                             | UInt32                  | True    | False | False     | 
 | NexusMods.Loadouts.GameMetadata/InitialDiskStateTransaction                        | Reference               | False   | False | False     | 
 | NexusMods.Loadouts.GameMetadata/LastScannedDiskStateTransaction                    | Reference               | False   | False | False     | 

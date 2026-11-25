@@ -300,6 +300,7 @@ public partial class ALoadoutSynchronizer : ILoadoutSynchronizer
     public async Task<Dictionary<GamePath, SyncNode>> BuildSyncTree(Loadout.ReadOnly loadout)
     {
         var metadata = await ReindexState(loadout.InstallationInstance);
+        metadata = await RecordBaselineIfVersionUnknown(loadout, metadata);
 
         var currentItems = GetDiskStateForGame(metadata);
         var prevItems = ((ILoadoutSynchronizer)this).GetPreviouslyAppliedDiskState(metadata);
@@ -1354,10 +1355,83 @@ public partial class ALoadoutSynchronizer : ILoadoutSynchronizer
         return new();
     }
 
+    /// <summary>
+    /// Records the files currently in the game folder as the game's original files (<see cref="GameBaselineFile"/>),
+    /// if this is the first sync of the installation and the game-hashes database doesn't know the installed version.
+    /// </summary>
+    /// <remarks>
+    /// The game-hashes database is no longer updated by Nexus Mods. Without a baseline, every file of a newer game
+    /// version would be treated as an external change, and resetting the game would delete the whole game folder.
+    /// </remarks>
+    private async ValueTask<GameInstallMetadata.ReadOnly> RecordBaselineIfVersionUnknown(Loadout.ReadOnly loadout, GameInstallMetadata.ReadOnly metadata)
+    {
+        // Only on the very first sync: later scans contain deployed mods and external changes.
+        if (metadata.Contains(Sdk.Games.GameInstallMetadata.LastSyncedLoadout)) return metadata;
+        if (GameBaselineFile.FindByGame(metadata.Db, metadata).Count > 0) return metadata;
+
+        var store = loadout.InstallationInstance.LocatorResult.Store;
+        if (_fileHashService.GetGameFiles((store, loadout.LocatorIds.ToArray())).Any()) return metadata;
+
+        var diskState = DiskStateEntry.FindByGame(metadata.Db, metadata);
+        if (diskState.Count == 0) return metadata;
+
+        Logger.LogWarning(
+            "The game-hashes database has no files for {Game} ({Store}, locator IDs `{LocatorIds}`). Using the {Count} files currently in the game folder as the original game files",
+            loadout.InstallationInstance.Game.DisplayName, store, loadout.LocatorIds.Select(x => x.Value).ToArray(), diskState.Count
+        );
+
+        using var tx = Connection.BeginTransaction();
+        foreach (var entry in diskState)
+        {
+            _ = new GameBaselineFile.New(tx)
+            {
+                Path = entry.Path,
+                Hash = entry.Hash,
+                Size = entry.Size,
+                GameId = metadata.Id,
+            };
+        }
+
+        await tx.Commit();
+        return GameInstallMetadata.Load(Connection.Db, metadata);
+    }
+
+    /// <summary>
+    /// The original files of the game: the <see cref="GameBaselineFile"/> entries if a baseline was recorded when the
+    /// game was first managed, otherwise the files the game-hashes database lists for the given locator IDs.
+    /// </summary>
+    /// <remarks>
+    /// A recorded baseline always wins: it only exists because the database didn't know the installed version, and
+    /// the locator IDs passed in can be stale (e.g. captured before a game update).
+    /// Keep in sync with the game files layer of <c>synchronizer.WinningFiles</c>.
+    /// </remarks>
+    private List<(GamePath Path, Hash Hash, Size Size)> GetOriginalGameFiles(IDb db, GameInstallMetadataId metadataId, GameInstallation installation, LocatorId[] locatorIds)
+    {
+        var files = GameBaselineFile.FindByGame(db, metadataId)
+            .Select(static file => ((GamePath)file.Path, file.Hash, file.Size))
+            .ToList();
+
+        if (files.Count > 0) return files;
+
+        return _fileHashService
+            .GetGameFiles((installation.LocatorResult.Store, locatorIds))
+            .Select(static file => (file.Path, file.Hash, file.Size))
+            .ToList();
+    }
+
     public async Task ResetToOriginalGameState(GameInstallation installation, LocatorId[] locatorIds)
     {
-        var gameState = _fileHashService.GetGameFiles((installation.LocatorResult.Store, locatorIds));
         var metadata = await ReindexState(installation);
+        var gameState = GetOriginalGameFiles(metadata.Db, metadata.Id, installation, locatorIds);
+
+        // Resetting with no known original files would delete everything in the game folder.
+        if (gameState.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"Refusing to reset {installation.Game.DisplayName} to its original state: the original game files are unknown " +
+                "(the installed version isn't in the game-hashes database and no baseline was recorded). No files were changed."
+            );
+        }
 
         var diskStateEntries = DiskStateEntry.FindByGame(metadata.Db, metadata);
 
