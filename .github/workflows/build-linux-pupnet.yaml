@@ -21,7 +21,14 @@ on:
         type: string
         required: false
         description: "The branch or commit of PupNet to use"
-        default: "dabed0cc2063c5a2d2c4f780bb6718f4b90cfd16"
+        # v1.10.0 (2026-04-12). Since v1.9.0 PupNet no longer embeds the 2020-era appimagetool + libfuse2 runtime,
+        # and expects appimagetool to be on the PATH instead.
+        default: "90793a199180da1ff2437bcbda83dedde2420d5f"
+      AppImageToolVersion:
+        type: string
+        required: false
+        description: "The release tag of https://github.com/AppImage/appimagetool to use"
+        default: "1.9.1"
       ProjectFile:
         type: string
         required: true
@@ -69,11 +76,19 @@ jobs:
           ref: ${{ inputs.Target || github.sha }}
           submodules: "recursive"
           
-      - name: Setup .NET 9.x
+      # .NET 9 builds the App, .NET 10 is required to build PupNet >= 1.10
+      - name: Setup .NET 9.x and 10.x
         uses: actions/setup-dotnet@v4
         id: stepid
         with:
-          dotnet-version: '9.x'
+          dotnet-version: |
+            9.x
+            10.x
+
+      - name: Pin .NET SDK for the App
+        run: |
+          sdk=$(dotnet --list-sdks | awk '/^9\./{print $1}' | sort -V | tail -1)
+          dotnet new globaljson --sdk-version "$sdk" --roll-forward latestPatch --force
           
       - name: Print debug info
         run: dotnet --info          
@@ -132,11 +147,19 @@ jobs:
           ref: ${{ inputs.Target || github.sha }}
           submodules: "recursive"
           
-      - name: Setup .NET 9.x
+      # .NET 9 builds the App, .NET 10 is required to build PupNet >= 1.10
+      - name: Setup .NET 9.x and 10.x
         uses: actions/setup-dotnet@v4
         id: stepid
         with:
-          dotnet-version: '9.x'
+          dotnet-version: |
+            9.x
+            10.x
+
+      - name: Pin .NET SDK for the App
+        run: |
+          sdk=$(dotnet --list-sdks | awk '/^9\./{print $1}' | sort -V | tail -1)
+          dotnet new globaljson --sdk-version "$sdk" --roll-forward latestPatch --force
 
       - name: Print debug info
         run: dotnet --info          
@@ -152,9 +175,15 @@ jobs:
           echo "projectDir=$projectDir" >> $env:GITHUB_OUTPUT
           echo "projectName=$projectName" >> $env:GITHUB_OUTPUT
 
-      # https://github.com/AppImage/AppImageKit/wiki/FUSE#install-fuse
-      - name: Install FUSE
-        run: sudo add-apt-repository universe && sudo apt install libfuse2
+      # The current appimagetool embeds the static type2-runtime (https://github.com/AppImage/type2-runtime),
+      # so the resulting AppImage no longer requires libfuse2 on the user's system.
+      - name: Install appimagetool
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL -o "$HOME/.local/bin/appimagetool-x86_64.AppImage" \
+            "https://github.com/AppImage/appimagetool/releases/download/${{ inputs.AppImageToolVersion }}/appimagetool-x86_64.AppImage"
+          chmod +x "$HOME/.local/bin/appimagetool-x86_64.AppImage"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Build & Install PupNet
         run: |
@@ -169,6 +198,9 @@ jobs:
 
       - name: Create AppImage
         working-directory: ${{ steps.transformInputs.outputs.projectDir }}
+        env:
+          # GitHub runners don't expose FUSE, so run appimagetool by extracting it
+          APPIMAGE_EXTRACT_AND_RUN: 1
         run: pupnet -y -v ${{ inputs.AppVersion }} -k AppImage -p DefineConstants=INSTALLATION_METHOD_APPIMAGE
 
       - name: Set outputs
