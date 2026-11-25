@@ -1,5 +1,4 @@
 using System.Collections.Frozen;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -71,7 +70,8 @@ internal class LocalMappingCache : IGameDomainToGameIdMappingCache
 
             gameIdToDomain = pairs.DistinctBy(tuple => tuple.Id).ToFrozenDictionary(tuple => tuple.Id, tuple => tuple.Domain);
             gameDomainToId = pairs.DistinctBy(tuple => tuple.Domain).ToFrozenDictionary(tuple => tuple.Domain, tuple => tuple.Id);
-            Debug.Assert(gameIdToDomain.Count == gameDomainToId.Count);
+            // NOTE: the two maps can differ in size: Nexus Mods data contains a few domains shared by
+            // more than one game id (e.g. "neverwinter", "wrc5"). DistinctBy keeps the first (lowest) id.
             return true;
         }
         catch (Exception e)

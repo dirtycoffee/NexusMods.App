@@ -1,11 +1,24 @@
-name: Git Builds
+name: Linux AppImage Build
 
 on:
-  schedule:
-    # At minute 17 past hour 8 and 14 (UTC) on every day-of-week from Monday through Thursday
-    # https://crontab.guru
-    - cron: '17 08,14 * * 1-5'
+  # Build the Linux AppImage whenever app code or the build setup changes, on any branch.
+  push:
+    paths:
+      - "src/**"
+      - "extern/**"
+      - "**.props"
+      - "**.targets"
+      - "**.sln"
+      - "**.csproj"
+      - "global.json"
+      - ".github/workflows/git-builds.yaml"
+      - ".github/workflows/build-linux-pupnet.yaml"
   workflow_dispatch:
+
+# A newer push to the same branch cancels the build that's still running.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   ProjectFile: "src/NexusMods.App/NexusMods.App.csproj"
@@ -27,18 +40,11 @@ jobs:
     needs: [ transformInputs ]
     uses: ./.github/workflows/build-linux-pupnet.yaml
     with:
-      AppVersion: "0.0.1"
+      # Continues from upstream's last release (0.21.x); the run number keeps builds ordered.
+      AppVersion: "0.22.${{ github.run_number }}"
       # this is a bit of a hack, you can't use environment variables here
       # https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
       ProjectFile: ${{ needs.transformInputs.outputs.ProjectFile }}
-      RetentionDays: 3
-
-  build-windows:
-    needs: [ transformInputs ]
-    uses: ./.github/workflows/build-windows-pupnet.yaml
-    with:
-      AppVersion: "0.0.1"
-      # this is a bit of a hack, you can't use environment variables here
-      # https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
-      ProjectFile: ${{ needs.transformInputs.outputs.ProjectFile }}
-      RetentionDays: 3
+      RetentionDays: 7
+      BuildAppImage: true
+      BuildArchive: false

@@ -31,17 +31,10 @@
       <Compile Update="OS\LinuxInterop.Protocol.cs">
         <DependentUpon>LinuxInterop.cs</DependentUpon>
       </Compile>
-      <Compile Update="OS\WindowsInterop.Protocol.cs">
-        <DependentUpon>WindowsInterop.cs</DependentUpon>
-      </Compile>
     </ItemGroup>
 
     <ItemGroup>
         <!-- Using .nupkg convention for auto extract. -->
-        <None Update="runtimes\win-x64\**">
-            <Pack>true</Pack>
-            <PackagePath>runtimes/win-x64</PackagePath>
-        </None>
 
         <None Update="runtimes\osx-x64\**">
             <Pack>true</Pack>

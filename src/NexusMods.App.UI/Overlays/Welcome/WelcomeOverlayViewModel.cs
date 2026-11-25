@@ -36,7 +36,7 @@ public class WelcomeOverlayViewModel : AOverlayViewModel<IWelcomeOverlayViewMode
         ILoginManager loginManager,
         IWindowNotificationService notificationService)
     {
-        AllowTelemetry = new BindableReactiveProperty<bool>(value: settingsManager.Get<TrackingSettings>().EnableTracking);
+        AllowTelemetry = new BindableReactiveProperty<bool>(value: false);
 
         CommandOpenDiscord = new ReactiveCommand(_ => osInterop.OpenUri(ConstantLinks.DiscordUri));
         CommandOpenForum = new ReactiveCommand(_ => osInterop.OpenUri(ConstantLinks.ForumsUri));
@@ -61,11 +61,6 @@ public class WelcomeOverlayViewModel : AOverlayViewModel<IWelcomeOverlayViewMode
 
         CommandClose = new ReactiveCommand(_ =>
         {
-            settingsManager.Update<TrackingSettings>(settings => settings with
-            {
-                EnableTracking = AllowTelemetry.Value,
-            });
-
             base.Close();
         });
 

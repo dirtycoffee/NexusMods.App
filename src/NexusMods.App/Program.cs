@@ -55,6 +55,9 @@ public class Program
         {
             var settingsManager = settingsHost.Services.GetRequiredService<ISettingsManager>();
             trackingSettings = settingsManager.Get<TrackingSettings>();
+            // This fork never sends telemetry or usage tracking to Nexus Mods, regardless of
+            // what an older install may have stored in its settings.
+            trackingSettings = trackingSettings with { EnableTracking = false };
             loggingSettings = settingsManager.Get<LoggingSettings>();
             experimentalSettings = settingsManager.Get<ExperimentalSettings>();
             gameLocatorSettings = settingsManager.Get<GameLocatorSettings>();

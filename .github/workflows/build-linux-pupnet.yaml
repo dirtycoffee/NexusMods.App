@@ -21,7 +21,14 @@ on:
         type: string
         required: false
         description: "The branch or commit of PupNet to use"
-        default: "dabed0cc2063c5a2d2c4f780bb6718f4b90cfd16"
+        # v1.10.0 (2026-04-12). Since v1.9.0 PupNet no longer embeds the 2020-era appimagetool + libfuse2 runtime,
+        # and expects appimagetool to be on the PATH instead.
+        default: "90793a199180da1ff2437bcbda83dedde2420d5f"
+      AppImageToolVersion:
+        type: string
+        required: false
+        description: "The release tag of https://github.com/AppImage/appimagetool to use"
+        default: "1.9.1"
       ProjectFile:
         type: string
         required: true
@@ -69,11 +76,11 @@ jobs:
           ref: ${{ inputs.Target || github.sha }}
           submodules: "recursive"
           
-      - name: Setup .NET 9.x
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         id: stepid
         with:
-          dotnet-version: '9.x'
+          global-json-file: global.json
           
       - name: Print debug info
         run: dotnet --info          
@@ -97,7 +104,9 @@ jobs:
           cd ../PupNet
           git clone ${{ inputs.PupNetRepo }} .
           git checkout ${{ inputs.PupNetBranch }}
-          dotnet pack -c Release -o . -p:Version=0.0.0-nma
+          # PupNet v1.10.0 packs ../README.nuget.md, which is missing from its repository
+          [ -f README.nuget.md ] || cp README.md README.nuget.md
+          dotnet pack KuiperZone.PupNet/KuiperZone.PupNet.csproj -c Release -o . -p:Version=0.0.0-nma
           dotnet tool install --global --add-source . KuiperZone.PupNet --version 0.0.0-nma
 
       - name: Create Archive
@@ -132,11 +141,11 @@ jobs:
           ref: ${{ inputs.Target || github.sha }}
           submodules: "recursive"
           
-      - name: Setup .NET 9.x
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         id: stepid
         with:
-          dotnet-version: '9.x'
+          global-json-file: global.json
 
       - name: Print debug info
         run: dotnet --info          
@@ -152,9 +161,15 @@ jobs:
           echo "projectDir=$projectDir" >> $env:GITHUB_OUTPUT
           echo "projectName=$projectName" >> $env:GITHUB_OUTPUT
 
-      # https://github.com/AppImage/AppImageKit/wiki/FUSE#install-fuse
-      - name: Install FUSE
-        run: sudo add-apt-repository universe && sudo apt install libfuse2
+      # The current appimagetool embeds the static type2-runtime (https://github.com/AppImage/type2-runtime),
+      # so the resulting AppImage no longer requires libfuse2 on the user's system.
+      - name: Install appimagetool
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL -o "$HOME/.local/bin/appimagetool-x86_64.AppImage" \
+            "https://github.com/AppImage/appimagetool/releases/download/${{ inputs.AppImageToolVersion }}/appimagetool-x86_64.AppImage"
+          chmod +x "$HOME/.local/bin/appimagetool-x86_64.AppImage"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Build & Install PupNet
         run: |
@@ -164,11 +179,16 @@ jobs:
           cd ../PupNet
           git clone ${{ inputs.PupNetRepo }} .
           git checkout ${{ inputs.PupNetBranch }}
-          dotnet pack -c Release -o . -p:Version=0.0.0-nma
+          # PupNet v1.10.0 packs ../README.nuget.md, which is missing from its repository
+          [ -f README.nuget.md ] || cp README.md README.nuget.md
+          dotnet pack KuiperZone.PupNet/KuiperZone.PupNet.csproj -c Release -o . -p:Version=0.0.0-nma
           dotnet tool install --global --add-source . KuiperZone.PupNet --version 0.0.0-nma
 
       - name: Create AppImage
         working-directory: ${{ steps.transformInputs.outputs.projectDir }}
+        env:
+          # GitHub runners don't expose FUSE, so run appimagetool by extracting it
+          APPIMAGE_EXTRACT_AND_RUN: 1
         run: pupnet -y -v ${{ inputs.AppVersion }} -k AppImage -p DefineConstants=INSTALLATION_METHOD_APPIMAGE
 
       - name: Set outputs

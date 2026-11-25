@@ -146,14 +146,16 @@
                                 </MenuItem.Icon>
                             </MenuItem>
                             <MenuItem Header="{x:Static resources:Language.OpenStatusPageMenuItem_Header}"
-                                      x:Name="OpenStatusPageMenuItem">
+                                      x:Name="OpenStatusPageMenuItem"
+                                      IsVisible="False">
                                 <MenuItem.Icon>
                                     <icons:UnifiedIcon Value="{x:Static icons:IconValues.Broadcast}" />
                                 </MenuItem.Icon>
                             </MenuItem>
                             <MenuItem Header="-" />
                             <MenuItem Header="{x:Static resources:Language.OpenDiscordMenuItem_Header}"
-                                      x:Name="OpenDiscordMenuItem">
+                                      x:Name="OpenDiscordMenuItem"
+                                      IsVisible="False">
                                 <MenuItem.Icon>
                                     <icons:UnifiedIcon Value="{x:Static icons:IconValues.Discord}" />
                                 </MenuItem.Icon>
@@ -165,7 +167,8 @@
                                 </MenuItem.Icon>
                             </MenuItem>
                             <MenuItem Header="{x:Static resources:Language.OpenForumsMenuItem_Header}"
-                                      x:Name="OpenForumsMenuItem">
+                                      x:Name="OpenForumsMenuItem"
+                                      IsVisible="False">
                                 <MenuItem.Icon>
                                     <icons:UnifiedIcon Value="{x:Static icons:IconValues.Forum}" />
                                 </MenuItem.Icon>

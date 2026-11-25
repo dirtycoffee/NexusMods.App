@@ -62,6 +62,7 @@
 
                 <StackPanel Orientation="Horizontal" Spacing="{StaticResource Spacing-4}" HorizontalAlignment="Center">
                     <controls:StandardButton x:Name="ButtonOpenDiscord"
+                                             IsVisible="False"
                                              Text="Discord"
                                              Type="Secondary"
                                              Fill="None"
@@ -71,6 +72,7 @@
                                              ToolTip.Tip="Open Discord" />
 
                     <controls:StandardButton x:Name="ButtonOpenForum"
+                                             IsVisible="False"
                                              Text="Nexus Mods Forums"
                                              Type="Secondary"
                                              Fill="None"
@@ -120,32 +122,6 @@
                                              Fill="Strong"
                                              Size="Small" />
                 </StackPanel>
-                <Expander x:Name="PrivacyPolicyExpander" HorizontalAlignment="Stretch">
-
-                    <Expander.Header>
-                        <CheckBox x:Name="CheckBoxAllowTelemetry"
-                                  HorizontalAlignment="Stretch"
-                                  IsChecked="True">Allow this app to collect usage data to improve your experience</CheckBox>
-                    </Expander.Header>
-
-                    <Border Padding="0,12">
-                        <StackPanel Spacing="12">
-                            <TextBlock Theme="{StaticResource BodySMNormalTheme}"
-                                       TextAlignment="Left"
-                                       TextWrapping="Wrap"
-                                       Foreground="{StaticResource NeutralSubduedBrush}"
-                                       Text="Help us provide you with the best modding experience. With your permission, we will collect analytics information and send it to our team to help us improve quality and performance. This information is sent anonymously and will never be shared with a 3rd party." />
-
-                            <controls:StandardButton x:Name="ButtonOpenPrivacyPolicy"
-                                                     Text="Privacy Policy"
-                                                     Type="Tertiary"
-                                                     Fill="Weak"
-                                                     Size="Small"
-                                                     LeftIcon="{x:Static icons:IconValues.OpenInNew}"
-                                                     ShowIcon="Left" />
-                        </StackPanel>
-                    </Border>
-                </Expander>
             </StackPanel>
             
             
