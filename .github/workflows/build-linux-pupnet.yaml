@@ -104,7 +104,9 @@ jobs:
           cd ../PupNet
           git clone ${{ inputs.PupNetRepo }} .
           git checkout ${{ inputs.PupNetBranch }}
-          dotnet pack -c Release -o . -p:Version=0.0.0-nma
+          # PupNet v1.10.0 packs ../README.nuget.md, which is missing from its repository
+          [ -f README.nuget.md ] || cp README.md README.nuget.md
+          dotnet pack KuiperZone.PupNet/KuiperZone.PupNet.csproj -c Release -o . -p:Version=0.0.0-nma
           dotnet tool install --global --add-source . KuiperZone.PupNet --version 0.0.0-nma
 
       - name: Create Archive
@@ -177,7 +179,9 @@ jobs:
           cd ../PupNet
           git clone ${{ inputs.PupNetRepo }} .
           git checkout ${{ inputs.PupNetBranch }}
-          dotnet pack -c Release -o . -p:Version=0.0.0-nma
+          # PupNet v1.10.0 packs ../README.nuget.md, which is missing from its repository
+          [ -f README.nuget.md ] || cp README.md README.nuget.md
+          dotnet pack KuiperZone.PupNet/KuiperZone.PupNet.csproj -c Release -o . -p:Version=0.0.0-nma
           dotnet tool install --global --add-source . KuiperZone.PupNet --version 0.0.0-nma
 
       - name: Create AppImage
