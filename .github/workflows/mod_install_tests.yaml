@@ -35,10 +35,10 @@ jobs:
         with:
           submodules: "recursive"
 
-      - name: Setup .NET Core SDK 8.0.x
-        uses: actions/setup-dotnet@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          global-json-file: global.json
 
       - name: Stress Test
         continue-on-error: true

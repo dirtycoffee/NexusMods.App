@@ -76,19 +76,11 @@ jobs:
           ref: ${{ inputs.Target || github.sha }}
           submodules: "recursive"
           
-      # .NET 9 builds the App, .NET 10 is required to build PupNet >= 1.10
-      - name: Setup .NET 9.x and 10.x
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         id: stepid
         with:
-          dotnet-version: |
-            9.x
-            10.x
-
-      - name: Pin .NET SDK for the App
-        run: |
-          sdk=$(dotnet --list-sdks | awk '/^9\./{print $1}' | sort -V | tail -1)
-          dotnet new globaljson --sdk-version "$sdk" --roll-forward latestPatch --force
+          global-json-file: global.json
           
       - name: Print debug info
         run: dotnet --info          
@@ -147,19 +139,11 @@ jobs:
           ref: ${{ inputs.Target || github.sha }}
           submodules: "recursive"
           
-      # .NET 9 builds the App, .NET 10 is required to build PupNet >= 1.10
-      - name: Setup .NET 9.x and 10.x
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         id: stepid
         with:
-          dotnet-version: |
-            9.x
-            10.x
-
-      - name: Pin .NET SDK for the App
-        run: |
-          sdk=$(dotnet --list-sdks | awk '/^9\./{print $1}' | sort -V | tail -1)
-          dotnet new globaljson --sdk-version "$sdk" --roll-forward latestPatch --force
+          global-json-file: global.json
 
       - name: Print debug info
         run: dotnet --info          
