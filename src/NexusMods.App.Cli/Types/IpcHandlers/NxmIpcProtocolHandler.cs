@@ -85,78 +85,13 @@ public class NxmIpcProtocolHandler : IIpcProtocolHandler
                 await HandleModUrl(modUrl, cancel);
                 break;
             case NXMCollectionUrl collectionUrl:
-                await HandleCollectionUrl(collectionUrl, cancel);
+                // Nexus Mods Collections are not supported by this fork.
+                _logger.LogWarning("Ignoring collection link {Url}: collections are not supported", collectionUrl);
+                _eventBus.Send(new CliMessages.CollectionAddFailed(new FailureReason.CollectionsNotSupported()));
                 break;
             default:
                 _logger.LogWarning("Unknown NXM URL type: {Url}", parsed);
                 break;
-        }
-    }
-
-    private async Task HandleCollectionUrl(NXMCollectionUrl collectionUrl, CancellationToken cancel)
-    {
-        var isUserLogged = await _loginManager.GetIsUserLoggedInAsync(cancel);
-        if (!isUserLogged)
-        {
-            _logger.LogWarning("Download failed: User is not logged in");
-            _eventBus.Send(new CliMessages.CollectionAddFailed(new FailureReason.NotLoggedIn()));
-            return;
-        }
-        
-        var domain = GameDomain.From(collectionUrl.Game);
-        var nexusModsLibrary = _serviceProvider.GetRequiredService<NexusModsLibrary>();
-        var library = _serviceProvider.GetRequiredService<ILibraryService>();
-        var connection = _serviceProvider.GetRequiredService<IConnection>();
-
-        var game = GetManagedGameFor(domain);
-        if (game is null)
-        {
-            _logger.LogWarning("Collection add aborted: {Game} is not a managed game", collectionUrl.Game);
-            _eventBus.Send(new CliMessages.CollectionAddFailed(new FailureReason.GameNotManaged(collectionUrl.Game)));
-            return;
-        }
-                    
-        var temporaryFileManager = _serviceProvider.GetRequiredService<TemporaryFileManager>();
-        _eventBus.Send(new CliMessages.CollectionAddStarted());
-
-        try
-        {
-            await using var destination = temporaryFileManager.CreateFile();
-
-            var slug = collectionUrl.Collection.Slug;
-            var revision = collectionUrl.Revision;
-
-            var db = connection.Db;
-            var list = db.Datoms(
-                (NexusModsCollectionLibraryFile.CollectionSlug, slug),
-                (NexusModsCollectionLibraryFile.CollectionRevisionNumber, revision)
-            );
-
-            var sw = Stopwatch.StartNew();
-            if (!list.Select(id => NexusModsCollectionLibraryFile.Load(db, id)).TryGetFirst(x => x.IsValid(), out var collectionFile))
-            {
-                var downloadJob = nexusModsLibrary.CreateCollectionDownloadJob(destination, collectionUrl.Collection.Slug, collectionUrl.Revision, CancellationToken.None);
-                var libraryFile = await library.AddDownload(downloadJob);
-
-                if (!libraryFile.TryGetAsNexusModsCollectionLibraryFile(out collectionFile))
-                    throw new InvalidOperationException("The library file is not a NexusModsCollectionLibraryFile");
-            }
-
-            var collectionRevision = await nexusModsLibrary.GetOrAddCollectionRevision(collectionFile, collectionUrl.Collection.Slug, collectionUrl.Revision, CancellationToken.None);
-            Events.CollectionsDownloadCompleted(
-                collectionId: collectionRevision.Collection.CollectionId.Value,
-                revisionId: collectionRevision.RevisionId.Value,
-                gameId: collectionRevision.Collection.GameId.Value,
-                modCount: collectionRevision.Downloads.Count,
-                duration: sw
-            );
-
-            _eventBus.Send(new CliMessages.CollectionAddSucceeded(collectionRevision));
-        }
-        catch (Exception e)
-        {
-            _eventBus.Send(new CliMessages.CollectionAddFailed(new FailureReason.Unknown(e)));
-            throw;
         }
     }
 

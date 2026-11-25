@@ -186,6 +186,12 @@ public class MainWindowViewModel : AViewModel<IMainWindowViewModel>, IMainWindow
                 {
                     switch (message.Reason)
                     {
+                        case FailureReason.CollectionsNotSupported:
+                            self._notificationService.ShowToast(
+                                "Nexus Mods Collections aren't supported. Download individual mods with \"Mod Manager Download\" instead.",
+                                ToastNotificationVariant.Failure
+                            );
+                            return;
                         case FailureReason.GameNotManaged gameNotManaged:
                             self._notificationService.ShowToast(
                                 string.Format(Language.ToastNotification_Collection_Add_failed___0__is_not_a_managed_game, gameNotManaged.Game),

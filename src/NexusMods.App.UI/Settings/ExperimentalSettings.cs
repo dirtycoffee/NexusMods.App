@@ -16,8 +16,11 @@ public record ExperimentalSettings : ISettings
     /// </summary>
     public bool EnableAllGames { get; [UsedImplicitly] set; } = ApplicationConstants.IsDebug;
 
-    // TODO: remove for GA
-    public bool EnableCollectionSharing { get; [UsedImplicitly] set; }
+    /// <summary>
+    /// Uploading collections to Nexus Mods. Always off: collections are not supported by this fork.
+    /// </summary>
+    [JsonIgnore]
+    public bool EnableCollectionSharing => false;
 
     /// <summary>
     /// Games offered in "My Games" unless <see cref="EnableAllGames"/> is set.
@@ -42,16 +45,6 @@ public record ExperimentalSettings : ISettings
                     DisplayName = "Enable unsupported games",
                     DescriptionFactory = _ => "Allows you to manage unsupported games.",
                     RequiresRestart = true,
-                },
-                new BooleanContainerOptions()
-            )
-            .ConfigureProperty(
-                x => x.EnableCollectionSharing,
-                new PropertyOptions<ExperimentalSettings, bool>
-                {
-                    Section = Sections.Experimental,
-                    DisplayName = "Enable sharing collections",
-                    DescriptionFactory = _ => "Allows uploading of collections",
                 },
                 new BooleanContainerOptions()
             );

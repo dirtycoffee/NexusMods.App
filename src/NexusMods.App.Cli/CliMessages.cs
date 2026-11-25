@@ -56,4 +56,7 @@ public static class FailureReason
     public record AlreadyExists(string Name) : IFailureReason;
     
     public record GameNotManaged(string Game) : IFailureReason;
+
+    /// <summary>Nexus Mods Collections are not supported by this fork.</summary>
+    public record CollectionsNotSupported : IFailureReason;
 }

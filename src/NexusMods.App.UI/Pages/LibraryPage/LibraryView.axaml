@@ -219,8 +219,10 @@
                     <!-- toolbar component -->
                     <controls:Toolbar Margin="24,12, 24, 0">
                         <ItemsControl>
+                            <!-- Nexus Mods Collections are not supported by this fork -->
                             <controls:StandardButton
                                 x:Name="GetCollectionFromNexusButton"
+                                IsVisible="False"
                                 Text="{x:Static resources:Language.FileOriginsPage_BrowseCollectionsNexusMods}"
                                 Type="Tertiary"
                                 Size="Toolbar"
