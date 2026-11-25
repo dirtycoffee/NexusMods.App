@@ -80,7 +80,10 @@ public static class Services
             .AddAllSingleton<ILoginManager, LoginManager>()
             .AddAllSingleton<INexusApiClient, NexusApiClient>()
             .AddSingleton<IModUpdateFilterService, ModUpdateFilterService>()
-            .AddAllSingleton<IModUpdateService, ModUpdateService>()
+            // Mod update checks against Nexus Mods are disabled in this fork; ModUpdateService is
+            // still registered (and tested) so it can be switched back on here.
+            .AddSingleton<ModUpdateService>()
+            .AddSingleton<IModUpdateService, DisabledModUpdateService>()
             .AddHostedService<HandlerRegistration>()
             .AddNexusApiVerbs();
 

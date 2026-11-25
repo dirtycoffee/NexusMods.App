@@ -316,12 +316,6 @@ public class LibraryViewModel : APageViewModel<ILibraryViewModel>, ILibraryViewM
                 .Subscribe(hasUpdates => HasAnyUpdatesAvailable = hasUpdates)
                 .AddTo(disposables);
 
-            // Auto check updates on entering library.
-            R3.Observable
-                .Return(Unit.Default)
-                .ObserveOnThreadPool()
-                .Subscribe(this,static (_, self) => self.RefreshUpdatesCommand.Execute(Unit.Default))
-                .AddTo(disposables);
         });
     }
 
