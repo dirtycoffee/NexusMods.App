@@ -24,13 +24,14 @@ public record ExperimentalSettings : ISettings
 
     /// <summary>
     /// Games offered in "My Games" unless <see cref="EnableAllGames"/> is set.
-    /// This fork focuses on Cyberpunk 2077; the other games stay registered so existing
-    /// loadouts keep working, they just aren't offered for new setups.
+    /// This fork focuses on Cyberpunk 2077 and Stardew Valley on Linux; the other games stay
+    /// registered so existing loadouts keep working, they just aren't offered for new setups.
     /// </summary>
     [JsonIgnore]
     public readonly GameId[] SupportedGames =
     [
         GameId.From("RedEngine.Cyberpunk2077"),
+        GameId.From("StardewValley"),
     ];
 
     public static ISettingsBuilder Configure(ISettingsBuilder settingsBuilder)
